@@ -6,7 +6,7 @@ from diffusers.image_processor import VaeImageProcessor
 from torchvision.transforms import Normalize
 from PIL import Image
 import pandas as pd
-from tqdm.auto import tqdm
+from tqdm.auto import tqdm, trange
 import numpy as np
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -18,22 +18,23 @@ height, width = 768, 768 # Image dimensions
 num_inference_steps = 50  # Number of denoising steps
 guidance_scale = 7.5  # Scale for classifier-free guidance
 
-def get_random_noise(batch_size: int, channel: int, height: int, width: int, generator: torch.Generator, same_noise_in_batch=True) -> torch.Tensor:
+def get_random_noise(batch_size: int, channel: int, height: int, width: int, generator: torch.Generator) -> torch.Tensor:
     '''Generate random noise of the specified shape.'''
-    ####TODO####
-        
-    if not same_noise_in_batch:
-        # Give each batch a different noise vector!
-        noise = torch.randn(size=(batch_size, channel, height, width), generator=generator, device=device, dtype=torch_type)
-        return noise
     
-    else:
-        # Give each Batch THIS SAME EXACT NOISE (omg!) of the shape c, h, w
-        one_noise = torch.randn(channel, height, width, generator=generator, device=device, dtype=torch_type)
-        noise_tensors = [one_noise for _ in range(batch_size)]
-        return torch.cat(noise_tensors, dim=0).reshape(batch_size, channel, height, width)
+    return torch.randn(size=(batch_size, channel, height, width), generator=generator, device=device, dtype=torch_type)
+        
+    # if not same_noise_in_batch:
+    #     # Give each batch a different noise vector!
+    #     noise = torch.randn(size=(batch_size, channel, height, width), generator=generator, device=device, dtype=torch_type)
+    #     return noise
+    
+    # else:
+    #     # Give each Batch THIS SAME EXACT NOISE (omg!) of the shape c, h, w
+    #     one_noise = torch.randn(channel, height, width, generator=generator, device=device, dtype=torch_type)
+    #     noise_tensors = [one_noise for _ in range(batch_size)]
+    #     return torch.cat(noise_tensors, dim=0).reshape(batch_size, channel, height, width)
 
-def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet, scheduler, save_name):
+def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet, scheduler, diffusion_model_name, batch_num):
     
     generator = torch.Generator(device=device)
     # generator.manual_seed(1023)
@@ -47,7 +48,7 @@ def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet,
         text_embeddings = text_encoder(text_inputs.input_ids.to(device))[0]
         
     batch_size = len(prompts)
-    print(f"BATCH SIZE IS: {batch_size}")
+    # print(f"BATCH SIZE IS: {batch_size}")
     
     max_length = text_inputs.input_ids.shape[-1]
 
@@ -59,11 +60,7 @@ def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet,
     text_embeddings = torch.cat([uncond_embeddings, text_embeddings])
 
     # 2. Generate the Starting Random Noise    
-    latents = get_random_noise(batch_size=batch_size,
-                               channel=unet.config.in_channels,
-                               height=height//8, width=width//8,
-                               generator=generator,
-                               same_noise_in_batch=True)
+    latents = torch.randn(size=(batch_size, unet.config.in_channels, height//8, width//8), generator=generator, device=device, dtype=torch_type)
     
     # 3. Denoise the Image (Learned Reverse Process)
     latents = latents * scheduler.init_noise_sigma
@@ -98,9 +95,8 @@ def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet,
     
     images = image_processor.postprocess(images, output_type="pil")
     
-    for i, image in enumerate(images, 0):
-        image.save(f"{save_name}a{i}.png")
-    
+    for j, image in enumerate(images, 0):
+        image.save(f"/opt/dlami/nvme/{diffusion_model_name}_generated_images/a{batch_num + j}.png")
     
     return images
     
@@ -111,7 +107,7 @@ def main():
 
     # Load components
     diffusion_model_name = "stabilityai/stable-diffusion-2-1"
-    cache_dir = '/home/ubuntu/.cache/huggingface'
+    cache_dir = '/opt/dlami/nvme'
     
     text_encoder = CLIPTextModel.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="text_encoder", cache_dir=cache_dir).to(device)
     tokenizer = CLIPTokenizer.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="tokenizer", cache_dir=cache_dir)
@@ -119,19 +115,26 @@ def main():
     unet = UNet2DConditionModel.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="unet", cache_dir=cache_dir).to(device)
     scheduler = DPMSolverMultistepScheduler.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="scheduler", cache_dir=cache_dir)
 
-    df = pd.read_csv("./small_dataset.csv")
-    prompts = df["caption_attribution_description"].to_list()
+    df = pd.read_csv("./small_dataset_translated.csv")
+    prompts = df["translated_caption_alt_text"].to_list()
     print(f"PROMPTS TYPE: {type(prompts)}")
     
-    batch_size = 8
+    batch_size = 16
     start_time = time.time()
-    generate_image_from_prompt(prompts=prompts[0:batch_size],
-                                   text_encoder=text_encoder,
-                                   tokenizer=tokenizer,
-                                   vae=vae,
-                                   unet=unet,
-                                   scheduler=scheduler,
-                                   save_name=f"manual_attr_outputs/")
+    diff_model_cute = diffusion_model_name.split("/")[-1]
+    df[f"{diff_model_cute}_save_paths"] = [f'/opt/dlami/nvme/{diff_model_cute}_generated_images/a{i}' for i in range(len(prompts))]
+    df.to_csv("./small_dataset_translated.csv")
+    
+    for i in trange(0, len(prompts), batch_size, desc=f"Batch Processing with {diff_model_cute}"):
+        batch_prompts = prompts[i : i+batch_size]
+        generate_image_from_prompt(prompts=batch_prompts,
+                                    text_encoder=text_encoder,
+                                    tokenizer=tokenizer,
+                                    vae=vae,
+                                    unet=unet,
+                                    scheduler=scheduler,
+                                    diffusion_model_name=diff_model_cute,
+                                    batch_num=i)
     
     end_time = time.time()
     print(f"TOTAL TIME: {end_time - start_time} seconds!")
