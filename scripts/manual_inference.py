@@ -8,13 +8,14 @@ from PIL import Image
 import pandas as pd
 from tqdm.auto import tqdm, trange
 import numpy as np
+import wandb
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 torch_type = torch.bfloat16
 assert torch.cuda.is_available(), "Torch Cuda is NOT available!"
 
 # Generation Hyperparameters!
-height, width = 768, 768 # Image dimensions
+height, width = 512, 512 # Image dimensions
 num_inference_steps = 50  # Number of denoising steps
 guidance_scale = 7.5  # Scale for classifier-free guidance
 
@@ -22,19 +23,8 @@ def get_random_noise(batch_size: int, channel: int, height: int, width: int, gen
     '''Generate random noise of the specified shape.'''
     
     return torch.randn(size=(batch_size, channel, height, width), generator=generator, device=device, dtype=torch_type)
-        
-    # if not same_noise_in_batch:
-    #     # Give each batch a different noise vector!
-    #     noise = torch.randn(size=(batch_size, channel, height, width), generator=generator, device=device, dtype=torch_type)
-    #     return noise
-    
-    # else:
-    #     # Give each Batch THIS SAME EXACT NOISE (omg!) of the shape c, h, w
-    #     one_noise = torch.randn(channel, height, width, generator=generator, device=device, dtype=torch_type)
-    #     noise_tensors = [one_noise for _ in range(batch_size)]
-    #     return torch.cat(noise_tensors, dim=0).reshape(batch_size, channel, height, width)
 
-def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet, scheduler, diffusion_model_name, batch_num):
+def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet, scheduler, save_path_prefix, batch_num):
     
     generator = torch.Generator(device=device)
     # generator.manual_seed(1023)
@@ -96,18 +86,29 @@ def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet,
     images = image_processor.postprocess(images, output_type="pil")
     
     for j, image in enumerate(images, 0):
-        image.save(f"/opt/dlami/nvme/{diffusion_model_name}_generated_images/a{batch_num + j}.png")
+        image.save(f'{save_path_prefix}a{batch_num + j}.png')
     
     return images
     
     
 def main():
+    wandb_api = "df1248450b282ba9bdaf39161311b2d5c72ccad0"
+    wandb.login(key=wandb_api)
     # Define device
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Load components
+    data_path = "../data/final_dataset_translated.csv"
     diffusion_model_name = "stabilityai/stable-diffusion-2-1"
+    diff_model_cute = diffusion_model_name.split("/")[-1]
     cache_dir = '/opt/dlami/nvme'
+    
+    
+    wandb.init(
+            name = f"{diff_model_cute}_inference",
+            reinit = True,
+            project = "Gen-AI-Multilingual-TTI",
+    )
     
     text_encoder = CLIPTextModel.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="text_encoder", cache_dir=cache_dir).to(device)
     tokenizer = CLIPTokenizer.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="tokenizer", cache_dir=cache_dir)
@@ -115,16 +116,19 @@ def main():
     unet = UNet2DConditionModel.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="unet", cache_dir=cache_dir).to(device)
     scheduler = DPMSolverMultistepScheduler.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="scheduler", cache_dir=cache_dir)
 
-    df = pd.read_csv("./small_dataset_translated.csv")
+    df = pd.read_csv(data_path)
+    batch_size = 8
     prompts = df["translated_caption_alt_text"].to_list()
-    print(f"PROMPTS TYPE: {type(prompts)}")
     
-    batch_size = 16
+    num_batches = len(df)//batch_size if len(df)%batch_size == 0 else len(df)//batch_size + 1
+    print(f"NUMBER OF BATCHES: {num_batches}")
+
     start_time = time.time()
-    diff_model_cute = diffusion_model_name.split("/")[-1]
-    df[f"{diff_model_cute}_save_paths"] = [f'/opt/dlami/nvme/{diff_model_cute}_generated_images/a{i}' for i in range(len(prompts))]
-    df.to_csv("./small_dataset_translated.csv")
+    save_path_prefix = f'../generated_images/{diff_model_cute}/'
+    df[f"{diff_model_cute}_save_paths"] = [f'{save_path_prefix}a{i}.png' for i in range(len(prompts))]
+    df.to_csv(data_path.split(".csv")[0]+"_with_paths.csv")
     
+    current_step = 0
     for i in trange(0, len(prompts), batch_size, desc=f"Batch Processing with {diff_model_cute}"):
         batch_prompts = prompts[i : i+batch_size]
         generate_image_from_prompt(prompts=batch_prompts,
@@ -133,13 +137,17 @@ def main():
                                     vae=vae,
                                     unet=unet,
                                     scheduler=scheduler,
-                                    diffusion_model_name=diff_model_cute,
+                                    save_path_prefix=save_path_prefix,
                                     batch_num=i)
+        wandb.log({"batches_completed": i//batch_size + 1}, step=current_step)
+        current_step += 1
     
     end_time = time.time()
     print(f"TOTAL TIME: {end_time - start_time} seconds!")
         
+   
     print("ALL DONE!")
+    wandb.finish()
 
 if __name__ == "__main__":
     main()
