@@ -13,6 +13,7 @@ This project was completed under the guidance of Prof. Matt Gormley and Henry Ch
 * Our Fine-tuned Multilingual CLIP Text Model: [RKS-CLIP-Text-Encoder](AaditD/rks-clip-text-encoder)
 * Our high quality subset of WIT :  [Multilingual-RKS-WIT](AaditD/multilingual_rks) (train/test split: 6k/1.5k image-caption pairs, with equal English, German, and French representation in captions).
 
+_Note : RKS is a reference to Arceus_
 ## **Results**
 FID and IS scores for the images generated using the two models, on three languages: English (EN), German (DE), and French (FR)
 
