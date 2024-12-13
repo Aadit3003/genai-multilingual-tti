@@ -24,7 +24,7 @@ def get_random_noise(batch_size: int, channel: int, height: int, width: int, gen
     
     return torch.randn(size=(batch_size, channel, height, width), generator=generator, device=device, dtype=torch_type)
 
-def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet, scheduler, save_path_prefix, batch_num):
+def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet, scheduler, save_path_prefix=0, batch_num=0, save_images=True):
     
     generator = torch.Generator(device=device)
     # generator.manual_seed(1023)
@@ -85,11 +85,13 @@ def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet,
     
     images = image_processor.postprocess(images, output_type="pil")
     
-    for j, image in enumerate(images, 0):
-        image.save(f'{save_path_prefix}a{batch_num + j}.png')
+    if save_images:
+        for j, image in enumerate(images, 0):
+            image.save(f'{save_path_prefix}a{batch_num + j}.png')
     
     return images
     
+
     
 def main():
     wandb_api = "df1248450b282ba9bdaf39161311b2d5c72ccad0"
@@ -104,11 +106,11 @@ def main():
     cache_dir = '/opt/dlami/nvme'
     
     
-    wandb.init(
-            name = f"{diff_model_cute}_inference",
-            reinit = True,
-            project = "Gen-AI-Multilingual-TTI",
-    )
+    # wandb.init(
+    #         name = f"{diff_model_cute}_inference",
+    #         reinit = True,
+    #         project = "Gen-AI-Multilingual-TTI",
+    # )
     
     text_encoder = CLIPTextModel.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="text_encoder", cache_dir=cache_dir).to(device)
     tokenizer = CLIPTokenizer.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="tokenizer", cache_dir=cache_dir)
@@ -117,16 +119,25 @@ def main():
     scheduler = DPMSolverMultistepScheduler.from_pretrained(diffusion_model_name, torch_dtype=torch_type, subfolder="scheduler", cache_dir=cache_dir)
 
     df = pd.read_csv(data_path)
+    df = df[df["language"]=="fr"]
+    df = df.head(2)
+    
+    
     batch_size = 8
     prompts = df["translated_caption_alt_text"].to_list()
     
-    num_batches = len(df)//batch_size if len(df)%batch_size == 0 else len(df)//batch_size + 1
+    # Use this to trip up the model!!
+    prompts = ["A porcupine", 
+               "Das Stachelschwein"]
+    # prompts = df["caption_alt_text_description"].to_list()
+    
+    num_batches = len(prompts)//batch_size if len(prompts)%batch_size == 0 else len(prompts)//batch_size + 1
     print(f"NUMBER OF BATCHES: {num_batches}")
 
     start_time = time.time()
     save_path_prefix = f'../generated_images/{diff_model_cute}/'
-    df[f"{diff_model_cute}_save_paths"] = [f'{save_path_prefix}a{i}.png' for i in range(len(prompts))]
-    df.to_csv(data_path.split(".csv")[0]+"_with_paths.csv")
+    # df[f"{diff_model_cute}_save_paths"] = [f'{save_path_prefix}a{i}.png' for i in range(len(prompts))]
+    # df.to_csv(data_path.split(".csv")[0]+"_with_paths.csv")
     
     current_step = 0
     for i in trange(0, len(prompts), batch_size, desc=f"Batch Processing with {diff_model_cute}"):
@@ -139,7 +150,7 @@ def main():
                                     scheduler=scheduler,
                                     save_path_prefix=save_path_prefix,
                                     batch_num=i)
-        wandb.log({"batches_completed": i//batch_size + 1}, step=current_step)
+        # wandb.log({"batches_completed": i//batch_size + 1}, step=current_step)
         current_step += 1
     
     end_time = time.time()
@@ -147,7 +158,7 @@ def main():
         
    
     print("ALL DONE!")
-    wandb.finish()
+    # wandb.finish()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

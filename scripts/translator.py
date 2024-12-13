@@ -94,7 +94,7 @@ def main():
         print(f"{lang} DONE!!")
     
     df_translated = pd.concat(subset_dfs)
-    df_translated.to_csv("./final_dataset_translated.csv")
+    df_translated.to_csv(f"./final_dataset_translated.csv")
     print("ALL DONE!")
     
 
