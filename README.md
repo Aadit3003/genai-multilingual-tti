@@ -55,32 +55,39 @@ FID and IS scores for the images generated using the two models, on three langua
 For the baselines, English achieves the best FID score, and surprisingly, German gets the best IS score (perhaps due to its similarity to English). **RKS-Diffusion outperforms the baseline on all metrics for French and German, while still not sacrificing English performance**. French gets the biggest improvement in FID score, and German gets the biggest improvement in IS score.
 
 ## Directory Structure
-* data - The dataset CSVs and the scripts to recreate them
-* scripts
-    * evaluation.py
-    * lora_inference.py
-    * manual_inference.py
-    * teacher_learning.py
-    * visualize.py
+* ```data``` - The dataset CSVs and the scripts to recreate them
+* ```scripts```
+    * ```evaluation.py```: Evaluation (FID and IS) code for the generated images
+    * ```lora_inference.py```: Inference code for the trained RKS-Diffusion model with the trained RKS-CLIP-Text-Encoder (using pipeline)
+    * ```manual_inference.py```: Inference code for Stable Diffusion v2.1 (from scratch, i.e. manually performing the reverse denoising process) 
+    * ```teacher_learning.py```: Training Stage-1 code for the RKS-CLIP-Text-Encoder
+    * ```train_text_to_image_lora_rks.py```: Training Stage-2 code for fine-tuning Stable Diffusion with LoRA (adapted from this blog by [Huggingface](https://huggingface.co/blog/lora))
+    *  lora.sh: The hyperparameters for the LoRA fine-tuning
+    * ```visualize.py```: Code to compare and visualize the output of the same prompt in three languages with the baseline and our model
 
 ## Reproduce the Results
 
-* (Optional) To recreate the Dutch pronunciation dictionary:
-    * Download the Celex2 dictionary and place it in the root folder
-    * ``` python create_aadit's_dutch_dict.py```
-    * Otherwise, simply use:- [Aadit's Dutch Pronunciation dictionary](https://github.com/Aadit3003/llm-rhyme/blob/85faec464d38443517b90497e032cf2f9bb28e9a/aadit's-dutch-dict)
-* (Optional) To recreate the dataset:
-    *  ``` python scrape_cmu_dict.py```
-    *  ``` python scrape_dutch_dict.py```
-    *  Otherwise, simply use the relevant rhyming dataset for your use case:- [English](https://github.com/Aadit3003/llm-rhyme/tree/85faec464d38443517b90497e032cf2f9bb28e9a/data/english) and [Dutch](https://github.com/Aadit3003/llm-rhyme/tree/85faec464d38443517b90497e032cf2f9bb28e9a/data/dutch)
-* To inference the LLMs:
-    * ``` python evaluate_rhyme.py <language> <model_family> <rhyme_type> <prompt_type> ```
-    *  language = _"english" / "dutch"_
-    *  model_family = _"llama2" / "llama3" / "crystal" / "olmo"_
-    *  rhyme_type = _"alliterative" / "assonance" / "consonance" / "singlePerfect" / "doublePerfect"_
-    *  prompt_type = _"title" / "description"_
-    * Refer to [bash_scripts](https://github.com/Aadit3003/llm-rhyme/tree/51dde68e3a068d624a5f32fa3477ee26e8aad44d/bash_scripts).
-    * The final F1 score is printed to the console, while the outputs for each rhyme pair are written to:- output/<language>/<model_family>/<prompt_type>/<rhyme_type>/
+Recreate the environment (Importantly, you need to perform installation of 'diffusers' from the source):
+```
+conda env create --file requirements.txt -n genai
+conda activate genai
+conda env create –file requirements.txt
+```
+
+### Training
+```cd scripts
+python teacher_learning.py  # Teacher Learning
+bash lora.sh  # Concept Alignment
+```
+
+### Evaluation
+```
+python manual_inference.py
+python lora_inference.py
+python eval.py --model "baseline" > baseline_results.txt
+python eval.py --model "rks-diffusion" > rks_diffusion_results.txt
+```
+
 
 ## Training Runs
 You can find W&B dashboards of our training runs here:
