@@ -1,3 +1,4 @@
+""" Inference script (without using pipeline) for a pre-trained DDIM (Stable Diffusion v2.1) """
 import torch
 import time
 from transformers import CLIPTextModel, CLIPTokenizer
