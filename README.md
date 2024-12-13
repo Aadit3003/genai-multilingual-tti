@@ -6,7 +6,7 @@ In this project, we ask the question: Is it worth adding non-English support to 
 
 Finally, we test our multilingual diffusion model (which we dub **RKS-diffusion**) and the standard Stable Diffusion v2.1 model on our high quality WIT test subset (see results below).
   
-This project was completed under the guidance of Prof. Matt Gormley and Henry Chai at CMU. For more details refer to our [poster](https://github.com/Aadit3003/llm-rhyme/blob/85faec464d38443517b90497e032cf2f9bb28e9a/report.pdf)
+This project was completed as part of 10-623 under the guidance of Prof. Matt Gormley and Henry Chai at CMU. For more details refer to our [poster](https://github.com/Aadit3003/genai-multilingual-tti/blob/81dd1af650e2620a808335af1d819b7823cf94db/Gen_AI_Poster_Final.pdf)
 
 ## **Main Contributions**
 * Our Fine-tuned Multilingual Diffusion Model: [RKS-Diffusion](https://huggingface.co/AaditD/rks-diffusion) (Supports English, French, and German)
