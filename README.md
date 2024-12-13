@@ -55,7 +55,12 @@ For the baselines, English achieves the best FID score, and surprisingly, German
 
 ## Directory Structure
 * data - The dataset CSVs and the scripts to recreate them
-* 
+* scripts
+    * evaluation.py
+    * lora_inference.py
+    * manual_inference.py
+    * teacher_learning.py
+    * visualize.py
 
 ## Reproduce the Results
 
