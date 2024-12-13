@@ -71,7 +71,7 @@ Recreate the environment (Importantly, you need to perform installation of 'diff
 ```
 conda env create --file requirements.txt -n genai
 conda activate genai
-conda env create –file requirements.txt
+pip install git+https://github.com/huggingface/diffusers
 ```
 
 ### Training
