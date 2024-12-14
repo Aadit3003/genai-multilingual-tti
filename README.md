@@ -55,8 +55,17 @@ FID and IS scores for the images generated using the two models, on three langua
 For the baselines, English achieves the best FID score, and surprisingly, German gets the best IS score (perhaps due to its similarity to English). **RKS-Diffusion outperforms the baseline on all metrics for French and German, while still not sacrificing English performance**. French gets the biggest improvement in FID score, and German gets the biggest improvement in IS score.
 
 ## Directory Structure
-* ```data``` - The dataset CSVs and the scripts to recreate them
-* ```scripts```
+* **data**
+    * utils
+        * ```clip.py```: CLIP Score generator (Used in wit_dataset_filtering.py)
+        * ```translator.py```: Translates German and French captions with NLLB-200 (Used in wit_dataset_filtering.py)
+    * ```cc_dataset_filtering.py```: Filter the CC-12 dataset
+    * ```wit_dataset_filtering.py```: Filter the WIT dataset
+    * final_dataset_translated.csv: The complete high quality filtered WIT sample
+    * final_test.csv: Test split of WIT sample (Used for Evaluation)
+    * final_train.csv: Train split of WIT sample (Used for Stage-2 Training of U-Net)
+    * teacher_set.csv: Train set using CC-12 (Used for Stage-1 Training of CLIP Text Encoder)
+* **scripts**
     * ```evaluation.py```: Evaluation (FID and IS) code for the generated images
     * ```lora_inference.py```: Inference code for the trained RKS-Diffusion model with the trained RKS-CLIP-Text-Encoder (using pipeline)
     * ```manual_inference.py```: Inference code for Stable Diffusion v2.1 (from scratch, i.e. manually performing the reverse denoising process) 
@@ -72,6 +81,14 @@ Recreate the environment (Importantly, you need to perform installation of 'diff
 conda env create --file requirements.txt -n genai
 conda activate genai
 pip install git+https://github.com/huggingface/diffusers
+```
+
+### Recreate Dataset
+First, download data files from: [CC12](https://huggingface.co/datasets/flax-community/conceptual-12m-multilingual-marian) and [WIT](https://github.com/google-research-datasets/wit/blob/main/DATA.md)
+```
+cd data
+python cc_dataset_filtering.py
+python wit_dataset_filtering.py
 ```
 
 ### Training
