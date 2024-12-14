@@ -99,8 +99,8 @@ bash lora.sh  # Concept Alignment
 
 ### Evaluation
 ```
-python manual_inference.py --checkpoint_path <your_checkpoint_path> --output_dir <baseline_output_dir> 
-python lora_inference.py --output_dir <rks_output_dir> 
+python manual_inference.py --output_dir <baseline_output_dir> 
+python lora_inference.py --checkpoint_path <your_checkpoint_path> --output_dir <rks_output_dir> 
 python eval.py --generated_image_dir <baseline_output_dir> > baseline_results.txt
 python eval.py --generated_image_dir <rks_output_dir> > rks_diffusion_results.txt
 ```
