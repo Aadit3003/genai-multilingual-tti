@@ -8,6 +8,7 @@ from tqdm.auto import tqdm, trange
 from huggingface_hub import model_info
 from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 import wandb
+from transformers import CLIPTextModel, CLIPTokenizer
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 torch_type = torch.bfloat16
@@ -43,6 +44,9 @@ def main():
     
     pipe = StableDiffusionPipeline.from_pretrained(model_base, torch_dtype=torch.float16)
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+    text_encoder = CLIPTextModel.from_pretrained("AaditD/rks-clip-text-encoder", cache_dir=args.cache_dir)
+    pipe.text_encoder = text_encoder
+    
     pipe = pipe.to("cuda")
     print("Pipeline loaded!")
     pipe.load_lora_weights(f"{ckpt_path}")
