@@ -20,7 +20,7 @@ guidance_scale = 7.5
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint_path", type=str, help='Path where Trained RKS-Diffusion model checkpoints are stored')
-    parser.add_argument("--output_dir", type=int, help='Step size (1000, 2000) for the visualization generation')
+    parser.add_argument("--output_dir", type=str, help='The directory to store the generated images')
     args = parser.parse_args()
     
     ckpt_path = args.checkpoint_path
@@ -37,7 +37,6 @@ def main():
     data_path = "../data/final_test.csv"  # This is our local version of the RKS-WIT dataset! Prevents having to download it each time!
 
     aadit_rks_model_id = "AaditD/rks-lora-diffusion"
-    
     info = model_info(aadit_rks_model_id)
     model_base = info.cardData["base_model"]
     print(model_base) 
@@ -48,8 +47,6 @@ def main():
     print("Pipeline loaded!")
     pipe.load_lora_weights(f"{ckpt_path}")
     print("LoRA Weights Loaded")
-    
-
     
     df = pd.read_csv(data_path) 
     batch_size = 8

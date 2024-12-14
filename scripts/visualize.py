@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
 from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+torch_type = torch.bfloat16
+assert torch.cuda.is_available(), "Torch Cuda is NOT available!"
 
 def visualize_results_with_imagegrid(results, prompts, checkpoints):
     """
@@ -51,10 +54,6 @@ def visualize_results_with_imagegrid(results, prompts, checkpoints):
     plt.savefig("wframe.png")
     plt.show()
 
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-torch_type = torch.bfloat16
-assert torch.cuda.is_available(), "Torch Cuda is NOT available!"
-
 def generate_gaussian_noise_image(width, height, mean=0, std_dev=1):
     """
     Generate a PIL image with Gaussian noise. (Just to check if our Visualize function is working)
@@ -65,7 +64,6 @@ def generate_gaussian_noise_image(width, height, mean=0, std_dev=1):
 
     noise_image = Image.fromarray(noise)
     return noise_image
-
 
 def main():
     
@@ -97,7 +95,6 @@ def main():
     
     checkpoints = list(range(0, 15000, step_size))
     # random_image = generate_gaussian_noise_image(512, 512, mean=128, std_dev=20) # This was for debugging the visualize function
-    
     checkpoint_image_mapper = {t:[] for t in checkpoints} # Key is Checkpoint, Value is the images Generated using this checkpoint (all the prompts)
     
     for timestep in checkpoints:

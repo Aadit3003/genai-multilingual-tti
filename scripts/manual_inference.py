@@ -1,4 +1,8 @@
-""" Inference script (without using pipeline) for a pre-trained DDIM (Stable Diffusion v2.1) """
+""" Inference script (without using pipeline) for a pre-trained DDIM (Stable Diffusion v2.1) 
+
+NOTE: The generate_image_from_prompt inference code was inspired by the code in the HW4 handout: prompt2prompt.py!
+Specifically the function: generate_image_from_text() in the MyLDMPipeline class
+"""
 
 import torch
 import time
@@ -6,7 +10,6 @@ from transformers import CLIPTextModel, CLIPTokenizer
 from diffusers import AutoencoderKL, UNet2DConditionModel, DPMSolverMultistepScheduler
 from diffusers.image_processor import VaeImageProcessor
 import argparse
-from PIL import Image
 import pandas as pd
 from tqdm.auto import tqdm, trange
 import numpy as np
@@ -89,7 +92,7 @@ def generate_image_from_prompt(prompts:list, text_encoder, tokenizer, vae, unet,
     
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output_dir", type=int, help='Step size (1000, 2000) for the visualization generation')
+    parser.add_argument("--output_dir", type=str, help='The directory to store the generated images')
     args = parser.parse_args()
     
     output_dir = args.output_dir
