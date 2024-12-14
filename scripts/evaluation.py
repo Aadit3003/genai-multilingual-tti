@@ -1,33 +1,23 @@
-#IS imports
+""" Evaluation Script for the generated images (Calculates FID score and IS score using the real and generated images) 
+
+Run this only after running the training scripts (teacher_learning.py and train_text_to_image_lora_rks.py) which stores
+the checkpoints needed to visualize the results """
 import numpy as np
-#import tensorflow as tf
-#from keras.applications.inception_v3 import InceptionV3
-#from keras.applications.inception_v3 import preprocess_input
 from skimage.transform import resize
-from numpy import expand_dims
-from numpy import log
-from numpy import mean
-from numpy import exp
 from PIL import Image
 import os
-
-#FID imports
 import torch
 from torchmetrics.image.fid import FrechetInceptionDistance
 from torchmetrics.image.inception import InceptionScore
 from torchvision import transforms
-#from torchvision.models import inception_v3
 from PIL import Image
 import os
 import argparse
 from tqdm import tqdm
 import pandas as pd
 
-from datasets import load_dataset
-
 BATCH_SIZE = 64
 
-#Loading images
 def load_images_from_folder(folder_path, n_start, n_end):
 	"""
 	Load all images from a specified folder.
@@ -41,7 +31,6 @@ def load_images_from_folder(folder_path, n_start, n_end):
 	return images
 
 
-#IS score
 def scale_images(images, new_shape):
 	images_list = []
 	for image in images:
@@ -57,21 +46,20 @@ def preprocess_images_uint8(images, image_size=299):
     Ensures images are in RGB format and resized to the same shape.
     """
     preprocess = transforms.Compose([
-        transforms.Resize((image_size, image_size)),  # Resize to target dimensions
-        transforms.Lambda(lambda img: img.convert("RGB")),  # Ensure 3 channels (RGB)
-        transforms.ToTensor(),  # Convert to tensor (float32)
-        transforms.Lambda(lambda x: (x * 255).byte())  # Scale to [0, 255] and convert to uint8
+        transforms.Resize((image_size, image_size)),  
+        transforms.Lambda(lambda img: img.convert("RGB")),  
+        transforms.ToTensor(), 
+        transforms.Lambda(lambda x: (x * 255).byte()) 
     ])
     processed = []
 
     for image in images:
         try:
-            processed_img = preprocess(image).unsqueeze(0)  # Add batch dimension
+            processed_img = preprocess(image).unsqueeze(0)  
             processed.append(processed_img)
         except Exception as e:
             print(f"Error processing image: {e}")
     
-    # Ensure all tensors have the same shape
     if len(processed) == 0:
         raise RuntimeError("No valid images after preprocessing.")
     shapes = [img.shape for img in processed]
@@ -83,65 +71,38 @@ def preprocess_images_uint8(images, image_size=299):
 
 def calculate_inception_score(images, n_split=10, device='cuda'):
     """
-    Compute Inception Score using torchmetrics with corrected preprocessing for uint8 input.
-
-    Args:
-        images (list): List of PIL images.
-        n_split (int): Number of splits for calculating Inception Score.
-        device (str): Device to run the calculation ('cuda' or 'cpu').
-
-    Returns:
-        tuple: (mean IS, std IS)
+    Torchmetrics version of Inception Score (unit8 to avoid type errors) : Use this with Fake Images ONLY!
     """
-    # Initialize InceptionScore metric
     inception = InceptionScore(splits=n_split, normalize=False).to(device)
 
-    # Preprocess images for uint8 format
     images = preprocess_images_uint8(images).to(device)
 
-    # Update metric with images
     inception.update(images)
 
-    # Calculate average and std deviation of scores
     is_avg, is_std = inception.compute()
     print(f"Inception Score: avg={is_avg.item()}, std={is_std.item()}")
     return is_avg.item(), is_std.item()
 
 def calculate_fid(real_images, fake_images, device='cuda'):
     """
-    Compute FID using torchmetrics with corrected preprocessing for uint8 input.
+    Torchmetrics version of FID Score (unit8 to avoid type errors) : Use this with Real and Fake Images BOTH!
     """
-    # Initialize the FrechetInceptionDistance metric
     fid = FrechetInceptionDistance(feature=768, normalize=False).to(device)
 
-    # Ensure that there are enough images to calculate FID
     if len(real_images) < 2:
         raise RuntimeError("At least two real images are required to compute FID")
     if len(fake_images) < 2:
         raise RuntimeError("At least two fake images are required to compute FID")
 
-    # Preprocess images for uint8 format
     real_images = preprocess_images_uint8(real_images).to(device)
     fake_images = preprocess_images_uint8(fake_images).to(device)
 
-    # Update FID with real and fake images
     fid.update(real_images, real=True)
     fid.update(fake_images, real=False)
 
-    # Compute and print the FID
     fid_score = float(fid.compute())
     print(f"FID: {fid_score}")
     return fid_score
-
-def score_images(dataset_file, real_folder, generated_folder, n = 50):
-    df = pd.read_csv(dataset_file)
-    df_en = df[df['language'] == 'en']
-    df_fr = df[df['language'] == 'fr']
-    df_de = df[df['language'] == 'de']
-    
-    real_images = load_images_from_folder(real_folder, n)
-    fake_images = load_images_from_folder(generated_folder, n)
-
 
 if __name__ == '__main__':
     # dataset_file = '../data/final_dataset_translated_with_paths.csv'

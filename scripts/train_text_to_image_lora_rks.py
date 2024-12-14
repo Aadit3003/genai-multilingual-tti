@@ -1,3 +1,10 @@
+""" Fine-tuning script for Training Stage 2: Concept Alignment (Here, we fine-tune the LoRA matrices of the U-Net)
+
+NOTE: This part of the code was adapted from an existing implementation of 
+LoRA training for Diffusion models, authored by the team at HuggingFace
+
+The original code can be found at: https://github.com/huggingface/diffusers/blob/main/examples/text_to_image/train_text_to_image_lora.py
+"""
 #!/usr/bin/env python
 # coding=utf-8
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.

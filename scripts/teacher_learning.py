@@ -1,3 +1,5 @@
+""" Fine-tuning script for Training Stage 1: Teacher Learning (Here, we train the CLIP Text encoder on parallel multilingual data) """
+
 from huggingface_hub import login
 from huggingface_hub import create_repo, upload_folder
 import torch

@@ -82,12 +82,16 @@ bash lora.sh  # Concept Alignment
 
 ### Evaluation
 ```
-python manual_inference.py
-python lora_inference.py
+python manual_inference.py --checkpoint_path <your_checkpoint_path> --output_dir <baseline_output_dir> 
+python lora_inference.py --output_dir <rks_output_dir> 
 python eval.py --model "baseline" > baseline_results.txt
 python eval.py --model "rks-diffusion" > rks_diffusion_results.txt
 ```
 
+### Visualize
+```
+python visualize.py --checkpoint_path <your_checkpoint_path> --step_size <the step size to iterate over: 1000, 2000, ..>
+```
 
 ## Training Runs
 You can find W&B dashboards of our training runs here:
