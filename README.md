@@ -113,6 +113,6 @@ python visualize.py --checkpoint_path <your_checkpoint_path> --step_size <the st
 ## Training Runs
 You can find W&B dashboards of our training runs here:
 * Training Stage 1: [Teacher Learning](https://wandb.ai/aadit/Gen-AI-Multilingual-TTI/runs/0p2fhqio/overview)
-* Trainign Stage 2: [Concept Alignment](https://wandb.ai/aadit/text2image-fine-tune/runs/1nkio8i8?nw=nwuseraaditd)
+* Training Stage 2: [Concept Alignment](https://wandb.ai/aadit/text2image-fine-tune/runs/1nkio8i8?nw=nwuseraaditd)
 
 
