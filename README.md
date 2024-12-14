@@ -10,8 +10,8 @@ This project was completed as part of 10-623 under the guidance of Prof. Matt Go
 
 ## **Main Contributions**
 * Our Fine-tuned Multilingual Diffusion Model: [RKS-Diffusion](https://huggingface.co/AaditD/rks-diffusion) (Supports English, French, and German)
-* Our Fine-tuned Multilingual CLIP Text Model: [RKS-CLIP-Text-Encoder](AaditD/rks-clip-text-encoder)
-* Our high quality subset of WIT :  [Multilingual-RKS-WIT](AaditD/multilingual_rks) (train/test split: 6k/1.5k image-caption pairs, with equal English, German, and French representation in captions).
+* Our Fine-tuned Multilingual CLIP Text Model: [RKS-CLIP-Text-Encoder](https://huggingface.co/AaditD/rks-clip-text-encoder)
+* Our high quality subset of WIT :  [Multilingual-RKS-WIT](https://huggingface.co/datasets/AaditD/multilingual_rks) (train/test split: 6k/1.5k image-caption pairs, with equal English, German, and French representation in captions).
 
 _Note : RKS is a reference to Arceus_
 ## **Results**
