@@ -1,3 +1,9 @@
+""" The script for Filtering the WIT Dataset, stored in /data/final_test/train.csv (Used for Stage-2 Training!) 
+
+
+NOTE: This script is included for completeness, there is no need to run it. 
+We uploaded our dataset to: https://huggingface.co/datasets/AaditD/multilingual_rks
+"""
 from urllib.request import urlopen
 from urllib.error import *
 import pandas as pd

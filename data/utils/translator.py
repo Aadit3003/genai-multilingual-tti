@@ -1,4 +1,5 @@
 """ Script to add the English Translations to the Original FR/DR captions in WIT
+Used by wit_dataset_filtering.py to translate the captions
 
 NOTE: This script is included for completeness, there is no need to run it. 
 We uploaded our dataset to: https://huggingface.co/datasets/AaditD/multilingual_rks
@@ -67,29 +68,3 @@ def add_translation_column(model, tokenizer, df, lang):
     df_subset["translated_caption_alt_text"] = translated_english_sentences
     
     return df_subset
-
-# The main function is for trying
-# def main():
-#     languages = ["eng_Latn", "fra_Latn", "deu_Latn"]
-
-#     df_full = pd.read_csv("./final_dataset.csv")
-
-#     model_name = "facebook/nllb-200-distilled-600M"
-#     cache_dir = '/opt/dlami/nvme'
-
-#     model = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=cache_dir).cuda()
-#     tokenizer = NllbTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-
-#     subset_dfs = []
-#     for lang in languages:
-    
-#         subset_dfs.append(add_translation_column(model, tokenizer, df_full, lang))
-#         print(f"{lang} DONE!!")
-    
-#     df_translated = pd.concat(subset_dfs)
-#     df_translated.to_csv(f"./final_dataset_translated.csv")
-#     print("ALL DONE!")
-    
-
-# if __name__ == '__main__':
-#     main()

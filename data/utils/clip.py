@@ -1,4 +1,5 @@
-""" Script to add the CLIP Scores to the image-caption pairs in WIT
+""" Script to add the CLIP Scores to the image-caption pairs in WIT. 
+Used by wit_dataset_filtering.py to filter the dataset
 
 NOTE: This script is included for completeness, there is no need to run it. 
 We uploaded our dataset to: https://huggingface.co/datasets/AaditD/multilingual_rks
@@ -37,29 +38,3 @@ def get_clip_scores(url, captions, model, processor):
     except (requests.exceptions.RequestException, PIL.UnidentifiedImageError) as e:
         print(f"Error processing URL {url}: {e}")
         return 666.0  # Filter this value later! CLIP Scores can't be this high, so it's ok!
-
-def main():
-    model = AltCLIPModel.from_pretrained("BAAI/AltCLIP",
-        device_map=device,
-        torch_dtype=torch_dtype,
-        cache_dir=cache_path)
-    processor = AltCLIPProcessor.from_pretrained("BAAI/AltCLIP", 
-                                                cache_dir=cache_path)
-
-    print("CUDA: ", torch.cuda.is_available())
-
-    filename = sys.argv[1]
-    df = pd.read_csv("./final_dataset.csv")
-
-    urls = df["image_url"]
-    captions = df["caption_alt_text_description"]
-
-    df["CLIP_Sim"] = [get_clip_scores(u, c, model, processor) for u, c in tqdm(zip(urls, captions), total=len(urls))]
-    df.head()
-    file_prefix = filename.split(".")[0]
-    df = df[df["CLIP_Sim"] >= 20] # CLIP Score Filtering
-    df.to_csv(f"./output/{file_prefix}_clipped.csv")
-    print("DONE!")
-    
-if __name__ == "__main__":
-    main()
